@@ -1,0 +1,23 @@
+{
+  "name": "notification-server-websocket",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/IntoMedia/notification-server-websocket"
+  },
+  "dependencies": {
+    "dotenv": "^6.2.0",
+    "express": "^4.4.5",
+    "http": "*",
+    "onesignal-node": "^2.0.1",
+    "socket.io": "^2.2.0",
+    "ws": "0.4.x"
+  },
+  "engines": {
+    "node": "8.10.x"
+  },
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  }
+}
