@@ -18,6 +18,13 @@ function createPush(type,title,msg,url,to){
 		filter = [
 			{"field": "tag", "key": "user", "relation": "=", "value": to.user}
 		];
+	}else if(to.method=='group'){
+		filter = [
+			{"field": "tag", "key": "group_"+to.type+"_"+to.name, "relation": "=", "value": true}
+		];
+		for (var i=0;i<to.notSend.length;i++){
+			filter.push({"field": "tag", "key": "user", "relation": "!=", "value": to.notSend[i]});
+		}
 	}
 	
 	
@@ -81,6 +88,28 @@ app.get('/send/:method/:type', function(req, res){
 			}
 			
 			resdata.success = true;
+		}else if(req.params.method=='group'){
+			var notSend = [];
+			
+			var group_type = req.query.type;
+			var group_name = req.query.name;
+			
+			for (var u in activeUsers){
+				if(activeUsers[u].groups[group_type][group_name] != undefined){
+					if(activeUsers[u].active){
+						notSend.push(activeUsers[u].user);
+					}
+					
+					io.sockets.connected[u].emit(req.params.type, {msg:req.query.msg,title:req.query.title,url:req.query.url});
+				}
+			}
+			
+			createPush(req.params.type,req.query.title,req.query.msg,req.query.url,{method:'group',type:group_type,name:group_name,notSend:notSend});
+			
+			resdata.success = true;
+		}else{
+			resdata.error = true;
+			resdata.message = 'WRONG METHOD';
 		}
 		
 		//io.emit(req.params.type, req.query.msg);
@@ -111,6 +140,6 @@ io.on('connection', function(socket){
 	
 });
 
-http.listen(process.env.PORT, function(){
-	console.log('listening on *:'+process.env.PORT);
+http.listen(process.env.SETPORT, function(){
+	console.log('listening on *:'+process.env.SETPORT);
 });
