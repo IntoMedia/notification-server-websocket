@@ -140,6 +140,6 @@ io.on('connection', function(socket){
 	
 });
 
-http.listen(process.env.SETPORT, function(){
-	console.log('listening on *:'+process.env.SETPORT);
+http.listen(process.env.PORT, function(){
+	console.log('listening on *:'+process.env.PORT);
 });
