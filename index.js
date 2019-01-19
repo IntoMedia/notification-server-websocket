@@ -71,9 +71,10 @@ function sendMethod(req,data){
 			delete data.code;
 			var event = data.event;
 			delete data.event;
+					
+			var type = req.params.type;
 			
 			var message = {
-				type:req.params.type,
 				event:event,
 				data:data
 			};
@@ -88,16 +89,14 @@ function sendMethod(req,data){
 					for (var i=0;i<data.user.length;i++){
 						var user = data.user[i];
 						var status = users.getUserStatus(user);
-
-
-						notifications.personal(user,status,message);
+						var a = notifications.personal(user,status,message,type);
 					}
 				}else{
 					var user = data.user;
 					var status = users.getUserStatus(user);
 
 
-					notifications.personal(user,status,message);
+					notifications.personal(user,status,message,type);
 				}
 
 				resdata.success = true;
@@ -107,7 +106,7 @@ function sendMethod(req,data){
 
 				var data = users.getUsersByGroup(group_type,group_name);
 
-				notifications.group(group_type,group_name,data,message);
+				notifications.group(group_type,group_name,data,message,type);
 
 				resdata.success = true;
 			}else{
