@@ -12,6 +12,7 @@ require('dotenv').config();
 app.use(express.json());
 
 
+
 const users = new Users(io);
 const notifications = new Notifications(io,OneSignal);
 
@@ -46,12 +47,9 @@ app.post('/addgroups', function(req, res){
 	res.send(JSON.stringify(resdata));
 });
 
-
-app.get('/send/:method/:type', function(req, res){
-	
+function sendMethod(req,data){
 	var resdata = {};
-	
-	if(process.env.ACCESS_CODE != req.query.code){
+	if(process.env.ACCESS_CODE != data.code){
 		resdata.error = true;
 		resdata.message = 'ACCESS FORBIDDEN';
 	}else{
@@ -61,23 +59,23 @@ app.get('/send/:method/:type', function(req, res){
 		if(req.params.type=='notification'){
 			var message = {
 				type:req.params.type,
-				msg:req.query.msg,
-				title:req.query.title,
-				url:req.query.url,
-				image:req.query.image
+				msg:data.msg,
+				title:data.title,
+				url:data.url,
+				image:data.image
 			};
 			
 			ok = true;
 		}else if(req.params.type=='event'){
 			
-			delete req.query.code;
-			var event = req.query.event;
-			delete req.query.event;
+			delete data.code;
+			var event = data.event;
+			delete data.event;
 			
 			var message = {
 				type:req.params.type,
 				event:event,
-				data:req.query
+				data:data
 			};
 			
 			ok = true;
@@ -86,17 +84,26 @@ app.get('/send/:method/:type', function(req, res){
 		if(ok){
 		
 			if(req.params.method=='personal'){
-				var user = req.query.user;
-				var status = users.getUserStatus(user);
+				if(Array.isArray(data.user)){
+					for (var i=0;i<data.user.length;i++){
+						var user = data.user[i];
+						var status = users.getUserStatus(user);
 
 
-				notifications.personal(user,status,message);
+						notifications.personal(user,status,message);
+					}
+				}else{
+					var user = data.user;
+					var status = users.getUserStatus(user);
 
+
+					notifications.personal(user,status,message);
+				}
 
 				resdata.success = true;
 			}else if(req.params.method=='group'){
-				var group_type = req.query.type;
-				var group_name = req.query.name;
+				var group_type = data.type;
+				var group_name = data.name;
 
 				var data = users.getUsersByGroup(group_type,group_name);
 
@@ -114,19 +121,40 @@ app.get('/send/:method/:type', function(req, res){
 		//io.emit(req.params.type, req.query.msg);
 	}
 	
+	return resdata;
+}
+
+app.post('/send/:method/:type', function(req, res){
+	var resdata = sendMethod(req,req.body);
+	res.send(JSON.stringify(resdata));
+});
+
+app.get('/send/:method/:type', function(req, res){
+	var resdata = sendMethod(req,req.query);
 	res.send(JSON.stringify(resdata));
 });
 
 
 io.on('connection', function(socket){
-	var data = users.addSession(socket.id,socket.request._query['user']);
+	var data = users.addSession(socket.id,socket.request._query['user'],socket.request._query['status']);
 	
 	if(data.requireInformations){
 		socket.emit('requireInformations',true);
 	}
 	
+	socket.on('status', function(status){
+		users.setStatus(socket.id,status);
+	});
+	
 	socket.on('disconnect', function(){
 		users.removeSession(socket.id);
+	});
+	
+	socket.on('event', function(data){
+		var user = data.user;
+		var status = users.getUserStatus(user);
+		data.type = 'clientevent';
+		notifications.personal(user,status,data);
 	});
 	
 });
