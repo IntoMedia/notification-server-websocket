@@ -58,12 +58,13 @@ function sendMethod(req,data){
 		
 		if(req.params.type=='notification'){
 			var message = {
-				type:req.params.type,
 				msg:data.msg,
 				title:data.title,
 				url:data.url,
 				image:data.image
 			};
+            
+            var type = req.params.type;
 			
 			ok = true;
 		}else if(req.params.type=='event'){
